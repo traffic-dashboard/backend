@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from app.routers import traffic, events, cctv
+from app.routers import traffic, events, cctv, vehicle
 
 load_dotenv()
 
@@ -26,3 +26,4 @@ app.add_middleware(
 app.include_router(traffic.router)
 app.include_router(events.router)
 app.include_router(cctv.router)
+app.include_router(vehicle.router)
