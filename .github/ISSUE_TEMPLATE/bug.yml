@@ -1,0 +1,25 @@
+name: 🐛bug
+description: 버그를 제보하는 템플릿입니다.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        버그를 제보해 주셔서 감사합니다!
+  - type: input
+    id: environment
+    attributes:
+      label: 환경 정보
+      description: 사용한 OS, 브라우저, Node.js 버전 등을 적어주세요.
+      placeholder: "예: Windows 11, Node.js 18.16.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 버그 설명
+      description: 어떤 문제가 발생했는지 상세히 적어주세요.
+      placeholder: 여기에 버그 내용을 작성하세요.
+    validations:
+      required: true

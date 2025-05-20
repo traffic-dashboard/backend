@@ -1,0 +1,42 @@
+name: 🔨ref
+description: 코드 개선이 필요할 때 사용하는 템플릿입니다.
+title: "[REFACTOR] "
+labels: ["refactor"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🔨 대상 코드  
+        어떤 부분의 코드를 리팩터링할 예정인지 설명해주세요.
+
+  - type: textarea
+    id: target_code
+    attributes:
+      label: 대상 코드
+      description: 리팩터링하려는 코드의 위치나 관련된 파일을 적어주세요.
+      placeholder: |
+        예: src/components/Button.tsx
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        💡 개선 이유  
+        왜 해당 코드를 리팩터링하려는지 이유를 적어주세요. 예: 가독성 향상, 중복 제거, 성능 개선 등
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 개선 이유
+      placeholder: |
+        예: 불필요한 중복 코드가 많아 유지보수가 어려움
+
+  - type: input
+    id: assignee
+    attributes:
+      label: 담당자
+      description: 이 이슈를 맡을 GitHub 사용자명을 입력해주세요.
+      placeholder: username
