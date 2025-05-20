@@ -82,3 +82,35 @@ def fetch_average_speed_and_volume():
 
     set_cached_value(key, json.dumps(result), ttl=300)
     return result
+
+def fetch_hourly_traffic_seoul():
+    """
+    서울 지역 기준 시간대별 교통량 총합 반환 (가장 단순한 형태)
+    """
+    key = f"traffic:hourly:seoul:{datetime.now().strftime('%Y-%m-%d')}"
+    cached = get_cached_value(key)
+    if cached:
+        return json.loads(cached)
+
+    params = {
+        "apiKey": TRAFFIC_API_KEY,
+        "productId": TRAFFIC_PRODUCT_ID
+    }
+    resp = requests.get(TRAFFIC_API_URL, params=params)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("trafficRegion", [])
+    if not items:
+        return []
+
+    hourly = defaultdict(int)
+    for e in items:
+        region = e.get("regionName", "")
+        if REGION_TO_CITY.get(region) != "서울":
+            continue
+        ts = e.get("sumDate")
+        hour = ts[8:10] if ts and len(ts) >= 10 else "??"
+        hourly[hour] += int(e.get("trafficAmout", 0))
+
+    result = [{"hour": h, "traffic": v} for h, v in sorted(hourly.items())]
+    set_cached_value(key, json.dumps(result), ttl=300)
+    return result
