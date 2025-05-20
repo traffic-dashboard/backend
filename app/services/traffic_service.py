@@ -1,13 +1,9 @@
 import os
-from typing import Optional, Tuple
 from collections import defaultdict
 import requests
-from dotenv import load_dotenv
 import json
 from datetime import datetime
 from app.services.cache_service import get_cached_value, set_cached_value
-
-load_dotenv()
 
 TRAFFIC_API_URL     = "https://www.bigdata-transportation.kr/api"
 TRAFFIC_API_KEY     = os.getenv("TRAFFIC_API_KEY")
@@ -24,8 +20,7 @@ REGION_TO_CITY = {
     "대전충남본부": "대전", "충북본부": "청주", "천안논산센터": "천안"
 }
 
-def fetch_city_traffic() -> Tuple[Optional[str], dict[str,int]]:
-    """도로별 교통량을 지역 → 도시 매핑하여 합산한 결과를 반환."""
+def fetch_city_traffic():
     params = {
         "apiKey":    TRAFFIC_API_KEY,
         "productId": TRAFFIC_PRODUCT_ID
@@ -35,19 +30,55 @@ def fetch_city_traffic() -> Tuple[Optional[str], dict[str,int]]:
     items = resp.json().get("result", {}).get("trafficRegion", [])
     if not items:
         return None, {}
-    totals: dict[str,int] = defaultdict(int)
+    totals = defaultdict(int)
     for e in items:
         city = REGION_TO_CITY.get(e.get("regionName",""), "기타")
         totals[city] += int(e.get("trafficAmout", 0))
     date = items[0].get("sumDate")
     return date, dict(totals)
 
-def fetch_city_traffic_with_cache() -> dict[str, int]:
+def fetch_city_traffic_with_cache():
     key = f"traffic:city:{datetime.now().strftime('%Y-%m-%d %H:%M')}"
     cached = get_cached_value(key)
     if cached:
         return json.loads(cached)
 
     _, data = fetch_city_traffic()
-    set_cached_value(key, json.dumps(data), ttl=300)  # 캐시 5분 유지
+    set_cached_value(key, json.dumps(data), ttl=300)
     return data
+
+def fetch_average_speed_and_volume():
+    key = f"traffic:avg:{datetime.now().strftime('%Y-%m-%d %H')}"
+    cached = get_cached_value(key)
+    if cached:
+        return json.loads(cached)
+
+    params = {
+        "apiKey": TRAFFIC_API_KEY,
+        "productId": TRAFFIC_PRODUCT_ID
+    }
+    resp = requests.get(TRAFFIC_API_URL, params=params)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("trafficRegion", [])
+    if not items:
+        return {}
+
+    city_data = defaultdict(lambda: {"total_volume": 0, "total_speed": 0.0, "count": 0})
+    for e in items:
+        city = REGION_TO_CITY.get(e.get("regionName", ""), "기타")
+        volume = int(e.get("trafficAmout", 0))
+        speed = float(e.get("speed", 0))
+        city_data[city]["total_volume"] += volume
+        city_data[city]["total_speed"] += speed
+        city_data[city]["count"] += 1
+
+    result = {}
+    for city, data in city_data.items():
+        count = data["count"]
+        result[city] = {
+            "avg_volume": round(data["total_volume"] / count, 2) if count else 0,
+            "avg_speed": round(data["total_speed"] / count, 2) if count else 0
+        }
+
+    set_cached_value(key, json.dumps(result), ttl=300)
+    return result
