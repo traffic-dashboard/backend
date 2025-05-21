@@ -1,21 +1,23 @@
 import os
-import httpx
+from datetime import timedelta
 
-from datetime import datetime
+import httpx
+from typing import Dict, List
 
 EVENT_API_URL = "https://openapi.its.go.kr:9443/eventInfo"
-ITS_API_KEY   = os.getenv("ITS_API_KEY")
+ITS_API_KEY = os.getenv("ITS_API_KEY")
 
 if not ITS_API_KEY:
     raise RuntimeError("ITS_API_KEY not set")
 
-def fetch_events() -> dict:
-    """교통사고 이벤트를 가져와 필수 필드만 반환."""
+
+def _fetch_single(event_type: str) -> Dict:
+    """단일 eventType으로 ITS API 호출"""
     params = {
-        "apiKey":     ITS_API_KEY,
-        "type":       "all",
-        "eventType":  "all",
-        "getType":    "json"
+        "apiKey":    ITS_API_KEY,
+        "type":      "all",
+        "eventType": event_type,
+        "getType":   "json",
     }
     resp = httpx.get(EVENT_API_URL, params=params)
     resp.raise_for_status()
@@ -27,14 +29,42 @@ def fetch_events() -> dict:
             "eventDetailType": i.get("eventDetailType"),
             "startDate":       i.get("startDate"),
             "coordX":          i.get("coordX"),
-            "coordY":          i.get("coordY")
+            "coordY":          i.get("coordY"),
         }
         for i in items
     ]
-    return {"totalCount": body.get("totalCount", 0), "events": events}
+    return {
+        "totalCount": body.get("totalCount", 0),
+        "events":     events,
+    }
+
+
+def fetch_events(event_types: List[str]) -> Dict:
+    """
+    event_types 목록으로 각각 ITS API를 호출한 뒤,
+    결과를 합쳐서 한 번에 반환.
+    """
+    # "all" 하나만 들어오면 그대로 단일 호출
+    if len(event_types) == 1 and event_types[0] == "all":
+        return _fetch_single("all")
+
+    combined_events = []
+    total = 0
+
+    for et in event_types:
+        data = _fetch_single(et)
+        total += data["totalCount"]
+        combined_events.extend(data["events"])
+
+    return {
+        "totalCount": total,
+        "events":     combined_events,
+    }
+
 
 def fetch_event_counts_last_8_days(region: str) -> list[dict[str, int]]:
     raw = fetch_events()
+    from datetime import datetime
     today = datetime.now().date()
     dates = [(today - timedelta(days=i)).strftime("%Y%m%d") for i in reversed(range(8))]
 
