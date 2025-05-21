@@ -4,6 +4,9 @@ import requests
 import json
 from datetime import datetime
 from app.services.cache_service import get_cached_value, set_cached_value
+from app.repositories.traffic_repository import save_hourly_traffic
+from app.database import SessionLocal
+from app.constants import ALLOWED_REGIONS
 
 TRAFFIC_API_URL     = "https://www.bigdata-transportation.kr/api"
 TRAFFIC_API_KEY     = os.getenv("TRAFFIC_API_KEY")
@@ -84,9 +87,6 @@ def fetch_average_speed_and_volume():
     return result
 
 def fetch_hourly_traffic_seoul():
-    """
-    서울 지역 기준 시간대별 교통량 총합 반환 (가장 단순한 형태)
-    """
     key = f"traffic:hourly:seoul:{datetime.now().strftime('%Y-%m-%d')}"
     cached = get_cached_value(key)
     if cached:
@@ -208,3 +208,12 @@ def fetch_vehicle_share_by_region(region: str):
 
     set_cached_value(key, json.dumps(totals_by_type), ttl=300)
     return totals_by_type
+
+def fetch_and_save_hourly_traffic():
+    db = SessionLocal()
+    try:
+        for region in ALLOWED_REGIONS:
+            data = fetch_hourly_traffic_by_region(region)
+            save_hourly_traffic(db, region, data)
+    finally:
+        db.close()
