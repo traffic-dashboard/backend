@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from app.services.event_service import fetch_events
-from app.services.event_service import fetch_daily_event_count
+from app.services.event_service import fetch_event_counts_last_8_days
 
 router = APIRouter(prefix="/traffic-events", tags=["events"])
 
@@ -14,4 +14,7 @@ def get_events():
 
 @router.get("/daily-count")
 def get_daily_event_count(region: str):
-    return {"region": region, "count": fetch_daily_event_count(region)}
+    return {
+        "region": region,
+        "data": fetch_event_counts_last_8_days(region)
+    }
