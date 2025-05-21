@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Date
-from app.database import Base  # ✅ 공용 Base를 import해서 씀
+# models/traffic.py
+from app.database import Base
 
 class HourlyTraffic(Base):
     __tablename__ = "hourly_traffic"
