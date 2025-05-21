@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.routers import traffic, events, cctv, vehicle
+from app.services.traffic_service import fetch_and_save_hourly_traffic
 
 load_dotenv()
 
@@ -27,3 +28,6 @@ app.include_router(traffic.router)
 app.include_router(events.router)
 app.include_router(cctv.router)
 app.include_router(vehicle.router)
+
+if __name__ == "__main__":
+    fetch_and_save_hourly_traffic()
