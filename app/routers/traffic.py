@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.services.traffic_service import fetch_city_traffic
 from app.services.traffic_service import fetch_average_speed_and_volume
 from app.services.traffic_service import fetch_hourly_speed_by_region
+from app.services.traffic_service import fetch_vehicle_share_by_region
 
 router = APIRouter(prefix="/traffic", tags=["traffic"])
 
@@ -20,3 +21,9 @@ def get_average_stats():
 @router.get("/hourly-speed")
 def get_hourly_speed(region: str):
     return fetch_hourly_speed_by_region(region)
+
+
+# Vehicle share by region endpoint
+@router.get("/vehicle-share")
+def get_vehicle_share(region: str):
+    return fetch_vehicle_share_by_region(region)

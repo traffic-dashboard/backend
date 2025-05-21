@@ -181,3 +181,30 @@ def fetch_hourly_speed_by_region(region: str):
     ]
     set_cached_value(key, json.dumps(result), ttl=300)
     return result
+
+def fetch_vehicle_share_by_region(region: str):
+    key = f"traffic:vehicle:{region}:{datetime.now().strftime('%Y-%m-%d')}"
+    cached = get_cached_value(key)
+    if cached:
+        return json.loads(cached)
+
+    params = {
+        "apiKey": TRAFFIC_API_KEY,
+        "productId": TRAFFIC_PRODUCT_ID
+    }
+    resp = requests.get(TRAFFIC_API_URL, params=params)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("trafficRegion", [])
+    if not items:
+        return {}
+
+    totals_by_type = defaultdict(int)
+    for e in items:
+        if REGION_TO_CITY.get(e.get("regionName")) != region:
+            continue
+        vehicle_type = e.get("vehicleType", "미분류")
+        traffic_amount = int(e.get("trafficAmout", 0))
+        totals_by_type[vehicle_type] += traffic_amount
+
+    set_cached_value(key, json.dumps(totals_by_type), ttl=300)
+    return totals_by_type
