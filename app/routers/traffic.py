@@ -1,8 +1,11 @@
+from typing import List
 from fastapi import APIRouter
 from app.services.traffic_service import fetch_city_traffic
 from app.services.traffic_service import fetch_average_speed_and_volume
 from app.services.traffic_service import fetch_hourly_speed_by_region
 from app.services.traffic_service import fetch_vehicle_share_by_region
+from app.services.traffic_service import fetch_hourly_traffic_by_region
+from schemas.traffic_schemas import HourlyTraffic
 
 router = APIRouter(prefix="/traffic", tags=["traffic"])
 
@@ -27,3 +30,7 @@ def get_hourly_speed(region: str):
 @router.get("/vehicle-share")
 def get_vehicle_share(region: str):
     return fetch_vehicle_share_by_region(region)
+
+@router.get("/hourly", response_model=List[HourlyTraffic])
+def get_hourly_traffic(region: str):
+    return fetch_hourly_traffic_by_region(region)
