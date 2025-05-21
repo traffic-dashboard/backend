@@ -132,16 +132,20 @@ def fetch_hourly_traffic_by_region(region: str):
     if not items:
         return []
 
-    hourly = defaultdict(int)
+    hourly = defaultdict(lambda: {"total": 0, "count": 0})
     for e in items:
         mapped_region = REGION_TO_CITY.get(e.get("regionName", ""))
         if mapped_region != region:
             continue
         ts = e.get("sumDate")
         hour = ts[8:10] if ts and len(ts) >= 10 else "??"
-        hourly[hour] += int(e.get("trafficAmout", 0))
+        hourly[hour]["total"] += int(e.get("trafficAmout", 0))
+        hourly[hour]["count"] += 1
 
-    result = [{"hour": h, "traffic": v} for h, v in sorted(hourly.items())]
+    result = [
+        {"hour": h, "traffic": round(data["total"] / data["count"], 2) if data["count"] else 0}
+        for h, data in sorted(hourly.items())
+    ]
     set_cached_value(key, json.dumps(result), ttl=300)
     return result
 
