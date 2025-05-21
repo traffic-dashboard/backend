@@ -107,10 +107,77 @@ def fetch_hourly_traffic_seoul():
         region = e.get("regionName", "")
         if REGION_TO_CITY.get(region) != "서울":
             continue
+        ts = e.get("sumDate", "")
+        hour = ts[8:10] if ts and len(ts) >= 10 else "??"
+        hourly[hour] += int(e.get("trafficAmout", 0))
+
+    result = [{"hour": h, "traffic": v} for h, v in sorted(hourly.items())]
+    set_cached_value(key, json.dumps(result), ttl=300)
+    return result
+
+
+def fetch_hourly_traffic_by_region(region: str):
+    key = f"traffic:hourly:{region}:{datetime.now().strftime('%Y-%m-%d')}"
+    cached = get_cached_value(key)
+    if cached:
+        return json.loads(cached)
+
+    params = {
+        "apiKey": TRAFFIC_API_KEY,
+        "productId": TRAFFIC_PRODUCT_ID
+    }
+    resp = requests.get(TRAFFIC_API_URL, params=params)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("trafficRegion", [])
+    if not items:
+        return []
+
+    hourly = defaultdict(int)
+    for e in items:
+        mapped_region = REGION_TO_CITY.get(e.get("regionName", ""))
+        if mapped_region != region:
+            continue
         ts = e.get("sumDate")
         hour = ts[8:10] if ts and len(ts) >= 10 else "??"
         hourly[hour] += int(e.get("trafficAmout", 0))
 
     result = [{"hour": h, "traffic": v} for h, v in sorted(hourly.items())]
+    set_cached_value(key, json.dumps(result), ttl=300)
+    return result
+
+def fetch_hourly_speed_by_region(region: str):
+    key = f"traffic:hourly-speed:{region}:{datetime.now().strftime('%Y-%m-%d')}"
+    cached = get_cached_value(key)
+    if cached:
+        return json.loads(cached)
+
+    params = {
+        "apiKey": TRAFFIC_API_KEY,
+        "productId": TRAFFIC_PRODUCT_ID
+    }
+    resp = requests.get(TRAFFIC_API_URL, params=params)
+    resp.raise_for_status()
+    items = resp.json().get("result", {}).get("trafficRegion", [])
+    if not items:
+        return []
+
+    hourly = defaultdict(lambda: {"speed_total": 0.0, "count": 0})
+    for e in items:
+        mapped_region = REGION_TO_CITY.get(e.get("regionName", ""))
+        if mapped_region != region:
+            continue
+        ts = e.get("sumDate", "")
+        hour = ts[8:10] if ts and len(ts) >= 10 else "??"
+        speed = float(e.get("speed", 0))
+        hourly[hour]["speed_total"] += speed
+        hourly[hour]["count"] += 1
+
+    result = [
+        {
+            "hour": h,
+            "avg_speed": round(data["speed_total"] / data["count"], 2) if data["count"] else 0
+        }
+        for h, data in sorted(hourly.items())
+    ]
     set_cached_value(key, json.dumps(result), ttl=300)
     return result
