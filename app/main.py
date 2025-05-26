@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from app.scheduler.task_scheduler import start_scheduler
 from app.routers import traffic, events, cctv, vehicle
 from app.services.traffic_service import fetch_and_save_hourly_traffic
 
@@ -13,6 +14,7 @@ if missing:
     raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
 app = FastAPI(title="Traffic & CCTV API")
+start_scheduler()
 
 origins = os.getenv("CORS_ORIGINS", "").split(",")
 
