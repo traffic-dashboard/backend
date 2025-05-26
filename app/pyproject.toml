@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-traffic-visualizer"
+version = "0.1.0"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "requests",
+    "redis",
+    "SQLAlchemy",
+    "python-dotenv",
+    "apscheduler",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["models*", "routers*", "services*", "repositories*"]
