@@ -202,8 +202,8 @@ def fetch_vehicle_share_by_region(region: str):
     if not items:
         return {}
 
-    totals_by_type = defaultdict(int)wq
-    wq
+    totals_by_type = defaultdict(int)
+
     for e in items:
         if REGION_TO_CITY.get(e.get("regionName")) != region:
             continue

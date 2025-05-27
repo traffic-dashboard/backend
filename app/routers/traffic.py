@@ -6,7 +6,10 @@ from app.services.traffic_service import fetch_average_speed_and_volume
 from app.services.traffic_service import fetch_hourly_speed_by_region
 from app.services.traffic_service import fetch_vehicle_share_by_region
 from app.services.traffic_service import fetch_hourly_traffic_by_region
-from schemas.traffic_schemas import HourlyTraffic, HourlySpeed, VehicleShare
+from schemas.traffic_schemas import HourlyTrafficSchema, HourlySpeed, VehicleShare
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/traffic", tags=["traffic"])
 
@@ -36,8 +39,20 @@ def get_vehicle_share(region: str):
         raise HTTPException(status_code=400, detail="지원하지 않는 지역입니다.")
     return fetch_vehicle_share_by_region(region)
 
-@router.get("/hourly", summary="시간대별 교통량 조회", description="선택한 지역의 시간대별 전체 교통량 데이터를 조회합니다.", response_model=List[HourlyTraffic])
+@router.get("/hourly", summary="시간대별 교통량 조회", description="선택한 지역의 시간대별 전체 교통량 데이터를 조회합니다.", response_model=List[HourlyTrafficSchema])
 def get_hourly_traffic(region: str):
     if region not in ALLOWED_REGIONS:
         raise HTTPException(status_code=400, detail="지원하지 않는 지역입니다.")
     return fetch_hourly_traffic_by_region(region)
+
+@router.get(
+    "/collected",
+    summary="수집된 교통량 데이터 확인",
+    description="최근 24시간 이내 저장된 시간대별 교통량 데이터를 조회합니다.",
+)
+def get_collected_data():
+    db: Session = SessionLocal()
+    one_day_ago = datetime.now() - timedelta(hours=24)
+    results = db.query(HourlyTraffic).filter(HourlyTraffic.timestamp >= one_day_ago).all()
+    db.close()
+    return results
