@@ -1,5 +1,8 @@
 fastapi
 uvicorn
+pydantic
 requests
-httpx
+redis
+SQLAlchemy
 python-dotenv
+apscheduler
